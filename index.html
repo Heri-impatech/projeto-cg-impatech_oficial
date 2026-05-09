@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelagem Geométrica - IMPA Tech</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="controls">
+        <h2>Painel de Controle</h2>
+        
+        <div class="control-group">
+            <label for="resRange">Resolução da Grade: </label>
+            <input type="range" id="resRange" min="5" max="150" value="50">
+            <span id="resValue">50</span>
+        </div>
+
+        <div class="control-group">
+            <button id="btnCircle">Círculo</button>
+            <button id="btnParabola">Parábola</button>
+        </div>
+        <div class="control-group">
+            <button id="btnSphere">Visualizar Esfera</button>
+            <button id="btnRefine">Refinar Malha (+1 Nível)</button>
+        </div>
+
+        <div class="control-group">
+            <button id="btnUniform" style="background-color: var(--accent-color);">Grade Uniforme</button>
+            <button id="btnAdaptive">Quadtree (Adaptativa)</button>
+        </div>
+        <div class="control-group">
+            <button id="btnRayTracer">Ativar Ray Tracing 2D</button>
+        </div>
+
+    </div>
+    
+    <canvas id="mainCanvas" width="500" height="500"></canvas>
+    
+    <script src="lib/gl-matrix.js"></script>
+    <script src="js/geometry.js"></script>
+    <script src="js/uniform.js"></script>
+    <script src="js/adaptive.js"></script>
+    <script src="js/sphere.js"></script>
+    <script src="js/raytracer.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

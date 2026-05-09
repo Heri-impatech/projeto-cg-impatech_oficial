@@ -1,0 +1,354 @@
+\documentclass[11pt,a4paper]{article}
+
+% Pacotes essenciais
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{amsmath,amsthm,amssymb,amsfonts}
+\usepackage{mathtools}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+
+
+% Configuração de página para 4 páginas
+\geometry{margin=2cm, top=2cm, bottom=2cm}
+
+% Ambientes de teoremas
+\theoremstyle{plain}
+\newtheorem{theorem}{Teorema}[section]
+\newtheorem{lemma}[theorem]{Lema}
+\newtheorem{proposition}[theorem]{Proposição}
+\newtheorem{corollary}[theorem]{Corolário}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definição}
+\newtheorem{remark}[theorem]{Observação}
+
+% Configuração de código
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    breaklines=true,
+    frame=single
+}
+
+\title{\textbf{Modelagem Geométrica: Representações Celulares e Esferas Geodésicas}}
+\author{Relatório de Implementação}
+\date{2 de Fevereiro de 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este relatório apresenta a implementação de representações celulares uniformes e adaptativas para formas geométricas bidimensionais (discos e parábolas), bem como a construção de esferas geodésicas por refinamento de sólidos platônicos. Demonstramos formalmente os fundamentos matemáticos de cada técnica e descrevemos os algoritmos utilizados. A implementação pode ser encontrada em \url{https://github.com/rick0110/projects-computer_grafics_summer_2026_IMPA}
+\end{abstract}
+
+\section{Representações Celulares Uniformes}
+
+\subsection{Fundamentação Matemática}
+
+\begin{definition}[Partição Uniforme]
+Seja $\Omega = [a,b] \times [c,d] \subset \mathbb{R}^2$ um retângulo. Uma \emph{partição uniforme} de $\Omega$ em $n \times n$ células é a coleção $\mathcal{P} = \{C_{i,j}\}_{i,j=1}^{n}$ onde:
+\[
+C_{i,j} = [x_i, x_{i+1}] \times [y_j, y_{j+1}], \quad x_i = a + i\cdot\Delta x, \quad y_j = c + j\cdot\Delta y
+\]
+com $\Delta x = \frac{b-a}{n}$ e $\Delta y = \frac{d-c}{n}$.
+\end{definition}
+
+\begin{definition}[Classificação de Células para Disco]
+Seja $D = \{(x,y) \in \mathbb{R}^2 : (x-c_x)^2 + (y-c_y)^2 \leq r^2\}$ um disco com centro $(c_x, c_y)$ e raio $r$. Para cada célula $C = [x_{\min}, x_{\max}] \times [y_{\min}, y_{\max}]$, definimos:
+\[
+\sigma(C) = \begin{cases}
+0 & \text{se } C \cap D = \emptyset \quad \text{(exterior)} \\
+1 & \text{se } C \subseteq D \quad \text{(interior)} \\
+2 & \text{se } C \cap \partial D \neq \emptyset \quad \text{(interseção)}
+\end{cases}
+\]
+\end{definition}
+
+\begin{theorem}[Critério de Classificação para Disco]\label{thm:disk}
+Seja $C = [x_{\min}, x_{\max}] \times [y_{\min}, y_{\max}]$ uma célula retangular e $D$ um disco de centro $(c_x, c_y)$ e raio $r$. Então:
+\begin{enumerate}[label=(\roman*)]
+    \item $\sigma(C) = 0$ se e somente se $d_{\min}^2 > r^2$, onde $d_{\min}$ é a distância do centro do disco ao ponto mais próximo de $C$.
+    \item $\sigma(C) = 1$ se e somente se $d_k^2 < r^2$ para todos os vértices $v_k$ de $C$.
+    \item $\sigma(C) = 2$ caso contrário.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\textbf{(i)} O ponto mais próximo de $C$ ao centro $(c_x, c_y)$ é dado por:
+\[
+p^* = \big(\text{clamp}(c_x, x_{\min}, x_{\max}),\, \text{clamp}(c_y, y_{\min}, y_{\max})\big)
+\]
+onde $\text{clamp}(z, a, b) = \max(a, \min(z, b))$. Se $\|p^* - (c_x, c_y)\|^2 > r^2$, então todo ponto de $C$ está a distância maior que $r$ do centro, logo $C \cap D = \emptyset$.
+
+\textbf{(ii)} Se todos os vértices $v_k \in \{(x_{\min}, y_{\min}), (x_{\max}, y_{\min}), (x_{\max}, y_{\max}), (x_{\min}, y_{\max})\}$ satisfazem $\|v_k - (c_x, c_y)\|^2 < r^2$, então pela convexidade de $D$ e $C$, temos $C \subset D$.
+
+\textbf{(iii)} Segue por exclusão dos casos anteriores. \qed
+\end{proof}
+
+\begin{definition}[Classificação para Região Parabólica]
+Seja $R = \{(x,y) \in \mathbb{R}^2 : y \geq ax^2 + bx + c\}$. Para uma célula $C$:
+\[
+\sigma(C) = \begin{cases}
+0 & \text{se } C \cap R = \emptyset \\
+1 & \text{se } C \subseteq R \\
+2 & \text{se } C \cap \partial R \neq \emptyset
+\end{cases}
+\]
+\end{definition}
+
+\begin{theorem}[Critério de Interseção Parábola-Retângulo]
+A célula $C$ intersecta a fronteira $\partial R: y = ax^2 + bx + c$ se e somente se pelo menos uma das seguintes condições é satisfeita:
+\begin{enumerate}[label=(\roman*)]
+    \item A parábola cruza uma aresta vertical: $y_{\min} \leq ax_{\min}^2 + bx_{\min} + c \leq y_{\max}$ ou análogo para $x_{\max}$.
+    \item A parábola cruza uma aresta horizontal: existem soluções $x \in [x_{\min}, x_{\max}]$ de $ax^2 + bx + (c - y_k) = 0$ para $y_k \in \{y_{\min}, y_{\max}\}$.
+\end{enumerate}
+\end{theorem}
+
+\subsection{Implementação}
+
+A classificação de uma célula $C$ pode ser determinada da seguinte forma:
+
+\begin{itemize}
+    \item $\sigma(C) = 0$ se todos os vértices de $C$ estiverem abaixo da parábola, pois a região acima da parábola é convexa se $a > 0$.
+    \item $\sigma(C) = 2$ se houver interseção das arestas da célula com a parábola, conforme as condições acima.
+    \item $\sigma(C) = 1$ se as condições anteriores não forem satisfeitas.
+\end{itemize}
+
+A implementação utiliza \textbf{PyTorch} com \texttt{vmap} para vetorização massiva das operações. As células são processadas em paralelo, explorando aceleração GPU quando disponível:
+
+\begin{equation}
+\text{Grid}: \mathbb{R}^{n \times n \times 4 \times 2} \xrightarrow{\text{vmap}} \mathbb{Z}_3^{n \times n}
+\end{equation}
+
+\section{Representações Celulares Adaptativas (Quadtree)}
+
+\subsection{Fundamentação Matemática}
+
+\begin{definition}[Quadtree]
+Uma \emph{quadtree} $T$ sobre $\Omega \subset \mathbb{R}^2$ é uma árvore quaternária onde cada nó $v$ representa uma célula retangular $C_v$, e seus quatro filhos (se existirem) representam a subdivisão de $C_v$ em quatro sub-células de igual tamanho.
+\end{definition}
+
+\begin{theorem}[Complexidade Espacial Adaptativa]
+Seja $\partial S$ a fronteira de uma forma $S$ com comprimento de arco $L$. Para uma quadtree de profundidade máxima $d$ sobre $\Omega = [0,1]^2$, o número de células na fronteira é $O(L \cdot 2^d)$, enquanto células internas/externas requerem $O(1)$ nós (não são subdivididas).
+\end{theorem}
+
+\begin{proof}
+Cada célula de fronteira no nível $d$ tem lado $\ell = 2^{-d}$. A fronteira $\partial S$ atravessa no máximo $O(L/\ell) = O(L \cdot 2^d)$ células. Células completamente internas ou externas não são subdivididas pelo critério adaptativo. \qed
+\end{proof}
+
+\textbf{Algoritmo de Construção Adaptativa:}
+
+\begin{enumerate}
+    \item \textsc{Build}($\Omega$, forma $S$, profundidade máxima $d$):
+    \begin{itemize}
+        \item $\sigma \gets$ \textsc{Classify}($\Omega$, $S$)
+        \item raiz $\gets$ \textsc{Node}($\Omega$, $\sigma$)
+        \item Se $\sigma = 2$ e profundidade $< d$: \textsc{Subdivide}(raiz, $S$, $d$)
+    \end{itemize}
+    \item \textsc{Subdivide}(nó $v$, forma $S$, $d$):
+    \begin{itemize}
+        \item Para cada quadrante $Q$ de $C_v$:
+        \item $\sigma_Q \gets$ \textsc{Classify}($Q$, $S$)
+        \item filho $\gets$ \textsc{Node}($Q$, $\sigma_Q$)
+        \item Se $\sigma_Q = 2$ e profundidade(filho) $< d$: \textsc{Subdivide}(filho, $S$, $d$)
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Poda da Árvore}
+
+\begin{proposition}[Critério de Poda]
+Se todos os filhos de um nó $v$ possuem status idêntico $\sigma \in \{0, 1\}$, então os filhos podem ser removidos e $v$ recebe status $\sigma$.
+\end{proposition}
+
+\section{Esfera Geodésica por Refinamento}
+
+\subsection{Fundamentação Matemática}
+
+\begin{definition}[Projeção Radial na Esfera]
+Seja $\mathbb{S}^2 = \{x \in \mathbb{R}^3 : \|x\| = 1\}$ a esfera unitária. A \emph{projeção radial} $\pi: \mathbb{R}^3 \setminus \{0\} \to \mathbb{S}^2$ é definida por:
+\[
+\pi(x) = \frac{x}{\|x\|}
+\]
+\end{definition}
+
+\begin{theorem}[Preservação de Estrutura Triangular]
+Seja $T = \{v_1, v_2, v_3\}$ um triângulo com vértices em $\mathbb{S}^2$. O refinamento por subdivisão mediana seguido de projeção radial produz quatro triângulos geodésicos bem-definidos.
+\end{theorem}
+
+\begin{proof}
+Dado um triângulo esférico $T$ com vértices $v_1, v_2, v_3 \in \mathbb{S}^2$:
+
+\textbf{Passo 1:} Calculamos os pontos médios das arestas:
+\[
+m_{12} = \frac{v_1 + v_2}{2}, \quad m_{23} = \frac{v_2 + v_3}{2}, \quad m_{31} = \frac{v_3 + v_1}{2}
+\]
+
+\textbf{Passo 2:} Projetamos na esfera:
+\[
+m'_{ij} = \pi(m_{ij}) = \frac{m_{ij}}{\|m_{ij}\|}
+\]
+
+\textbf{Passo 3:} Os quatro novos triângulos são:
+\[
+T_1 = (v_1, m'_{12}, m'_{31}), \quad T_2 = (v_2, m'_{23}, m'_{12}), \quad T_3 = (v_3, m'_{31}, m'_{23}), \quad T_4 = (m'_{12}, m'_{23}, m'_{31})
+\]
+
+Cada triângulo tem vértices em $\mathbb{S}^2$ por construção. \qed
+\end{proof}
+
+\begin{proposition}[Dinâmica de Crescimento da Malha]
+Seja $\mathcal{M}_0$ uma malha triangular fechada (homeomorfa a $\mathbb{S}^2$) com $F_0$ faces, $A_0$ arestas e $V_0$ vértices. Após $k$ iterações do algoritmo de refinamento por subdivisão mediana, as quantidades de elementos são:
+\[
+F_k = 4^k F_0, \qquad A_k = 4^k A_0, \qquad V_k = 2 + 4^k(V_0 - 2)
+\]
+\end{proposition}
+
+\begin{proof}
+\textbf{(i) Faces ($F_k$):} O algoritmo subdivide cada face triangular $T$ em quatro novas faces conectando os pontos médios das arestas. Logo, o número de faces quadruplica a cada iteração:
+\[
+F_k = 4 \cdot F_{k-1} \implies F_k = 4^k F_0
+\]
+
+\textbf{(ii) Arestas ($A_k$):} Demonstramos a recorrência $A_k = 4A_{k-1}$ pela construção geométrica. Cada aresta antiga é dividida em duas (gerando $2A_{k-1}$ arestas), e em cada uma das $F_{k-1}$ faces inserimos 3 novas arestas internas:
+\[
+A_k = 2A_{k-1} + 3F_{k-1}
+\]
+Como a malha é triangular, vale $3F_{k-1} = 2A_{k-1}$. Substituindo:
+\[
+A_k = 2A_{k-1} + 3 \cdot \frac{2A_{k-1}}{3} = 4A_{k-1} \implies A_k = 4^k A_0
+\]
+
+\textbf{(iii) Vértices ($V_k$):} Utilizamos a Característica de Euler para superfícies fechadas orientáveis de gênero 0:
+\[
+V_k - A_k + F_k = \chi(\mathbb{S}^2) = 2
+\]
+Isolando $V_k$ e substituindo os resultados de (i) e (ii):
+\[
+V_k = 2 + A_k - F_k = 2 + 4^k A_0 - 4^k F_0 = 2 + 4^k(A_0 - F_0)
+\]
+Da Característica de Euler na malha inicial, $V_0 - A_0 + F_0 = 2$, temos $A_0 - F_0 = V_0 - 2$. Portanto:
+\[
+V_k = 2 + 4^k(V_0 - 2) \qed
+\]
+\end{proof}
+
+\begin{corollary}
+Para o icosaedro ($V_0 = 12$, $A_0 = 30$, $F_0 = 20$), com $k=8$ refinamentos:
+\[
+F_8 = 4^8 \cdot 20 = 1.310.720 \text{ faces}, \quad V_8 = 2 + 4^8 \cdot 10 = 655.362 \text{ vértices}
+\]
+\end{corollary}
+
+\subsection{Formato OBJ}
+
+A malha resultante é exportada no formato Wavefront OBJ:
+\begin{itemize}
+    \item \texttt{v x y z}: vértice com coordenadas normalizadas ($\|v\| = 1$)
+    \item \texttt{f i j k}: face triangular com índices de vértices (1-indexado)
+\end{itemize}
+
+\section{Resultados e Dificuldades}
+
+\subsection{Resultados}
+\begin{itemize}
+    \item \textbf{Uniformes}: Grades processadas em paralelo com suporte para GPU.
+    \item \textbf{Adaptativas}: Quadtrees construidas recursivamente analisando apenas células de fronteira, sendo mais eficiente em CPU. Além disso, pode-se ver a construção recursiva por meio de animação.
+    \item \textbf{Esfera}: Refinamento do icosaedro e geração de arquivo obj. Resultados de vizualização foram aceitaveis.
+\end{itemize}
+
+\subsection{Dificuldades Encontradas}
+\begin{enumerate}
+    \item \textbf{Divisão adaptativa e uniforme}: Adaptar algoritmos para \texttt{vmap} do PyTorch exigiu evitar alguns tipos de operacões e mudar mudar a estrutura de fluxo do algoritmo para que houvesse apenas operacões vetoriais e que permitisse um fluxo idêntico para que se pudesse dar uma única instrução para várias threads. Além disso, como o método de classificação de células em parábloas nao estava nos slides, tive que pensar um pouco antes de implementar (tive problemas para debugar o código, pois a minha primeira intuição de classificaçao -- sem pensar na lógica matemática -- estava errada).
+    \item \textbf{Unificação de Vértices}: O refinamento ingênuo cria vértices duplicados; uma estrutura de hash -- sugerida no material -- foi necessária para malhas maiores (porém tive que pensar um pouco sobre como implementar).
+\end{enumerate}
+
+\section{Figuras}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{../img/uniform_circle_0_grid_16.png}
+    \caption{Grade $16 \times 16$}
+\end{subfigure}
+\begin{subfigure}[b]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{../img/uniform_circle_0_grid_32.png}
+    \caption{Grade $32 \times 32$}
+\end{subfigure}
+\begin{subfigure}[b]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{../img/uniform_circle_0_grid_64.png}
+    \caption{Grade $64 \times 64$}
+\end{subfigure}
+\caption{Representação Uniforme do Disco (centro $(0.3, 0.4)$, raio $0.21$).}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{../img/quadtree_circle_0_depth_4.png}
+    \caption{Profundidade 4}
+\end{subfigure}
+\begin{subfigure}[b]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{../img/quadtree_circle_0_depth_5.png}
+    \caption{Profundidade 5}
+\end{subfigure}
+\begin{subfigure}[b]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{../img/quadtree_circle_0_depth_6.png}
+    \caption{Profundidade 6}
+\end{subfigure}
+\caption{Representação Adaptativa (Quadtree) do Disco.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{../img/uniform_parabola_0_grid_32.png}
+    \caption{Uniforme $32 \times 32$}
+\end{subfigure}
+\begin{subfigure}[b]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{../img/quadtree_parabola_0_depth_5.png}
+    \caption{Quadtree profundidade 5}
+\end{subfigure}
+\begin{subfigure}[b]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{../img/quadtree_parabola_0_depth_6.png}
+    \caption{Quadtree profundidade 6}
+\end{subfigure}
+\caption{Parábola $y \geq x^2$: representações uniforme e adaptativa.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.24\textwidth}
+    \includegraphics[width=\textwidth]{../img/sphere_refine_0.png}
+    \caption{Nível 0 (20 faces)}
+\end{subfigure}
+\begin{subfigure}[b]{0.24\textwidth}
+    \includegraphics[width=\textwidth]{../img/sphere_refine_1.png}
+    \caption{Nível 1 (80 faces)}
+\end{subfigure}
+\begin{subfigure}[b]{0.24\textwidth}
+    \includegraphics[width=\textwidth]{../img/sphere_refine_2.png}
+    \caption{Nível 2 (320 faces)}
+\end{subfigure}
+\begin{subfigure}[b]{0.24\textwidth}
+    \includegraphics[width=\textwidth]{../img/sphere_refine_3.png}
+    \caption{Nível 3 (1280 faces)}
+\end{subfigure}
+\caption{Refinamento da Esfera Geodésica: do icosaedro (nível 0) até nível 3. Cada nível quadruplica o número de faces.}
+\end{figure}
+
+\end{document}
