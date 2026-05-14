@@ -3,46 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modelagem Geométrica - IMPA Tech</title>
+    <title>Modelagem Geométrica Pro - IMPA Tech</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #1a1a1a; color: #eee; font-family: sans-serif; }
+        #controls { background: #2d2d2d; padding: 15px; width: 300px; height: 100vh; overflow-y: auto; float: left; }
+        canvas { background: #000; display: block; margin: 0 auto; cursor: crosshair; }
+        .control-group { margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        input[type="text"] { width: 100%; background: #444; border: 1px solid #555; color: white; padding: 5px; margin-top: 5px; }
+        button { width: 100%; margin-top: 5px; cursor: pointer; padding: 8px; border: none; border-radius: 4px; transition: 0.2s; }
+        button:hover { opacity: 0.8; }
+    </style>
 </head>
 <body>
     <div id="controls">
-        <h2>Painel de Controle</h2>
+        <h2>Motor de Cena 2D</h2>
         
         <div class="control-group">
-            <label for="resRange">Resolução da Grade: </label>
-            <input type="range" id="resRange" min="5" max="150" value="50">
-            <span id="resValue">50</span>
+            <label>Função Implícita (f(x, y)):</label>
+            <input type="text" id="inputFunc" placeholder="Ex: x*x + y*y - 0.25">
+            <button id="btnAddFunc" style="background: #27ae60; color: white;">Adicionar Função</button>
+            <small style="font-size: 0.8em; color: #888;">Use x, y entre -2 e 2.</small>
         </div>
 
         <div class="control-group">
-            <button id="btnCircle">Círculo</button>
-            <button id="btnParabola">Parábola</button>
-        </div>
-        <div class="control-group">
-            <button id="btnSphere">Visualizar Esfera</button>
-            <button id="btnRefine">Refinar Malha (+1 Nível)</button>
+            <button id="btnCircle" style="background: #2980b9; color: white;">+ Círculo (Clique no Canvas)</button>
+            <button id="btnParabola" style="background: #8e44ad; color: white;">+ Parábola</button>
+            <button id="btnParticles" style="background: #f39c12; color: white;">+ 1 Partícula Dinâmica</button>
+            <button id="btnClear" style="background: #c0392b; color: white;">Limpar Cena</button>
         </div>
 
         <div class="control-group">
-            <button id="btnUniform" style="background-color: var(--accent-color);">Grade Uniforme</button>
-            <button id="btnAdaptive">Quadtree (Adaptativa)</button>
-        </div>
-        <div class="control-group">
-            <button id="btnRayTracer">Ativar Ray Tracing 2D</button>
-            <button id="btnParticle" style="background-color: #f39c12;">Ativar Partícula Dinâmica</button>
+            <label>Alcance da Lanterna:</label>
+            <input type="range" id="lightRange" min="50" max="600" value="300">
         </div>
 
+        <div class="control-group">
+            <button id="btnRayTracer" style="background: #f1c40f; color: #000;">Modo Lanterna</button>
+            <button id="btnAdaptive">Modo Estrutura (Quadtree)</button>
+        </div>
+
+        <div class="control-group">
+            <label>Nível da Quadtree:</label>
+            <input type="range" id="resRange" min="2" max="10" value="7">
+        </div>
     </div>
     
-    <canvas id="mainCanvas" width="512" height="512"></canvas>
+    <canvas id="mainCanvas" width="600" height="600"></canvas>
     
-    <script src="lib/gl-matrix.js"></script>
     <script src="js/geometry.js"></script>
-    <script src="js/uniform.js"></script>
     <script src="js/adaptive.js"></script>
-    <script src="js/sphere.js"></script>
     <script src="js/raytracer.js"></script>
     <script src="js/main.js"></script>
 </body>
