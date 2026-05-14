@@ -4,9 +4,6 @@
  * - 0: fora (branco)
  * - 1: dentro (azul)
  * - 2: interseção / não-classificado (vermelho)
- *
- * Também inclui um animador que "revela" os nós na mesma ordem
- * usada na animação do repositório (simulando a recursão via stack).
  */
 
 const ADAPTIVE_COLORS = {
@@ -46,7 +43,6 @@ function adaptivePaintRect(imageData, x, y, size, rgba) {
     }
 }
 
-// Versão mais próxima do Python (Node + Quadtree)
 class Node {
     constructor(xMin, yMin, xMax, yMax, depth, status) {
         this.xMin = xMin;
@@ -84,35 +80,27 @@ class Quadtree {
         const halfX = (node.xMax - node.xMin) / 2;
         const halfY = (node.yMax - node.yMin) / 2;
 
-        // offsets = [(0,0), (half_x,0), (half_x,half_y), (0,half_y)]
-        let cx;
-        let cy;
-        let childStatus;
-        let child;
+        let cx; let cy; let childStatus; let child;
 
-        cx = node.xMin + 0;
-        cy = node.yMin + 0;
+        cx = node.xMin + 0; cy = node.yMin + 0;
         childStatus = this.shape.classifyCell(cx, cx + halfX, cy, cy + halfY);
         child = new Node(cx, cy, cx + halfX, cy + halfY, node.depth + 1, childStatus);
         node.children.push(child);
         if (childStatus === 2) this._subdivide(child, maxDepth);
 
-        cx = node.xMin + halfX;
-        cy = node.yMin + 0;
+        cx = node.xMin + halfX; cy = node.yMin + 0;
         childStatus = this.shape.classifyCell(cx, cx + halfX, cy, cy + halfY);
         child = new Node(cx, cy, cx + halfX, cy + halfY, node.depth + 1, childStatus);
         node.children.push(child);
         if (childStatus === 2) this._subdivide(child, maxDepth);
 
-        cx = node.xMin + halfX;
-        cy = node.yMin + halfY;
+        cx = node.xMin + halfX; cy = node.yMin + halfY;
         childStatus = this.shape.classifyCell(cx, cx + halfX, cy, cy + halfY);
         child = new Node(cx, cy, cx + halfX, cy + halfY, node.depth + 1, childStatus);
         node.children.push(child);
         if (childStatus === 2) this._subdivide(child, maxDepth);
 
-        cx = node.xMin + 0;
-        cy = node.yMin + halfY;
+        cx = node.xMin + 0; cy = node.yMin + halfY;
         childStatus = this.shape.classifyCell(cx, cx + halfX, cy, cy + halfY);
         child = new Node(cx, cy, cx + halfX, cy + halfY, node.depth + 1, childStatus);
         node.children.push(child);
@@ -147,7 +135,6 @@ class Quadtree {
 }
 
 function generateRevealOrderFromQuadtreeRoot(root) {
-    // Mesmo algoritmo do Python (_generate_history_from_existing): stack + reversed(children)
     const order = [root];
     const stack = [root];
 
@@ -167,7 +154,6 @@ class AdaptiveQuadtreeAnimator {
         this.width = width;
         this.height = height;
         this.stepIntervalMs = stepIntervalMs;
-
         this.reset(shape, maxDepth);
     }
 
@@ -175,10 +161,12 @@ class AdaptiveQuadtreeAnimator {
         this.shape = shape;
         this.maxDepth = maxDepth;
 
-        // Construção alinhada ao Python (Quadtree.build/_subdivide)
         this.quadtree = new Quadtree(0, this.width, 0, this.height, shape);
         this.quadtree.build(maxDepth);
-        // Não chamamos prune() por padrão (o Python também não precisa para os casos convexos)
+        
+        // Ativando o processo de PODA (Pruning) para otimizar memória e acelerar travessia de raios
+        this.quadtree.prune();
+
         this.root = this.quadtree.root;
         this.revealOrder = generateRevealOrderFromQuadtreeRoot(this.root);
 
@@ -188,7 +176,7 @@ class AdaptiveQuadtreeAnimator {
 
         this.visibleCount = 0;
         this.lastStepAt = 0;
-        this.revealTo(1); // pinta o root
+        this.revealTo(1); 
     }
 
     revealTo(count) {
@@ -223,7 +211,6 @@ class AdaptiveQuadtreeAnimator {
 }
 
 function drawAdaptiveGrid(ctx, shape, maxDepth, w, h) {
-    // Modo não-animado: desenha o resultado final de uma vez.
     const animator = new AdaptiveQuadtreeAnimator(shape, maxDepth, w, h, 0);
     animator.revealTo(animator.revealOrder.length);
     animator.draw(ctx);
