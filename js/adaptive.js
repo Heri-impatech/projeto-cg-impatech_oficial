@@ -1,6 +1,6 @@
 /**
  * js/adaptive.js
- * Quadtree adaptativa (estilo do repo de referência):
+ * Quadtree adaptativa:
  * - 0: fora (branco)
  * - 1: dentro (azul)
  * - 2: interseção / não-classificado (vermelho)

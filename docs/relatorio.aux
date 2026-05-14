@@ -4,19 +4,85 @@
 \providecommand\hyper@newdestlabel[2]{}
 \providecommand\HyField@AuxAddToFields[1]{}
 \providecommand\HyField@AuxAddToCoFields[2]{}
-\babel@aux{nil}{}
-\@writefile{toc}{\contentsline {section}{\numberline {1}Introdução}{1}{section.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {2}Representações Celulares e Quadtrees}{1}{section.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Grades Uniformes e Classificação}{1}{subsection.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Quadtree Adaptativa e Poda (Pruning)}{1}{subsection.2.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3}Ray Tracing e Iluminação Volumétrica}{2}{section.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Aceleração por AABB (Slab Method)}{2}{subsection.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Iluminação de Dentro para Fora}{2}{subsection.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Decaimento de Luz (Falloff)}{2}{subsection.3.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}Física de Partículas e Colisões}{2}{section.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Cálculo de Gradientes para Reflexão}{2}{subsection.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Sombras Dinâmicas (Line-of-Sight)}{2}{subsection.4.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5}Rasterização de Funções Customizadas}{3}{section.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6}Esferas Geodésicas}{3}{section.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {7}Conclusão}{3}{section.7}\protected@file@percent }
-\gdef \@abspage@last{3}
+\babel@aux{brazilian}{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introdução}{4}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}Organização do Relatório}{4}{subsection.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Funções Implícitas e o Problema de Inclusão}{4}{section.2}\protected@file@percent }
+\newlabel{sec:implicitas}{{2}{4}{Funções Implícitas e o Problema de Inclusão}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Definição Formal}{4}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Exemplos Concretos}{5}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Círculo de centro $(c_x, c_y)$ e raio $r$:}{5}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Parábola $y = x^2$ como fronteira:}{5}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Combinação de objetos (União Implícita):}{5}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Mapeamento de Coordenadas}{5}{subsection.2.3}\protected@file@percent }
+\newlabel{subsec:coords}{{2.3}{5}{Mapeamento de Coordenadas}{subsection.2.3}{}}
+\newlabel{eq:mapx}{{1}{6}{Mapeamento de Coordenadas}{equation.2.1}{}}
+\newlabel{eq:mapy}{{2}{6}{Mapeamento de Coordenadas}{equation.2.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Discretização Celular e Classificação}{6}{section.3}\protected@file@percent }
+\newlabel{sec:discretizacao}{{3}{6}{Discretização Celular e Classificação}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Motivação para a Discretização}{6}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Grade Uniforme}{6}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.1}Classificação de Células}{7}{subsubsection.3.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Classificação Exata para Círculos}{7}{subsection.3.3}\protected@file@percent }
+\newlabel{subsec:circle_exact}{{3.3}{7}{Classificação Exata para Círculos}{subsection.3.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Quadtree Adaptativa}{8}{section.4}\protected@file@percent }
+\newlabel{sec:quadtree}{{4}{8}{Quadtree Adaptativa}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Motivação para a Adaptatividade}{8}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Definição Recursiva}{8}{subsection.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Construção iterativa da Quadtree. Apenas células com Status 2 (vermelho) são subdivididas. Células com Status 0 (branco) ou Status 1 (azul) são folhas.}}{9}{figure.caption.5}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:quadtree_build}{{1}{9}{Construção iterativa da Quadtree. Apenas células com Status 2 (vermelho) são subdivididas. Células com Status 0 (branco) ou Status 1 (azul) são folhas}{figure.caption.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Algoritmo de Construção}{9}{subsection.4.3}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Construção da Quadtree}}{9}{algorithm.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.3.1}Complexidade}{9}{subsubsection.4.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Poda (Pruning)}{10}{subsection.4.4}\protected@file@percent }
+\newlabel{subsec:pruning}{{4.4}{10}{Poda (Pruning)}{subsection.4.4}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces Poda da Quadtree (post-order)}}{10}{algorithm.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Ray Tracing Volumétrico}{10}{section.5}\protected@file@percent }
+\newlabel{sec:raytracing}{{5}{10}{Ray Tracing Volumétrico}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Modelo de Iluminação e Motivação}{10}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Equação do Raio}{11}{subsection.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Interseção Raio--AABB: O Método das Lâminas}{11}{subsection.5.3}\protected@file@percent }
+\newlabel{subsec:aabb}{{5.3}{11}{Interseção Raio--AABB: O Método das Lâminas}{subsection.5.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Travessia Hierárquica da Quadtree}{12}{subsection.5.4}\protected@file@percent }
+\newlabel{subsec:traversal}{{5.4}{12}{Travessia Hierárquica da Quadtree}{subsection.5.4}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {3}{\ignorespaces Travessia de Raio na Quadtree}}{12}{algorithm.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Raymarching na Fronteira}{12}{subsection.5.5}\protected@file@percent }
+\newlabel{subsec:raymarch}{{5.5}{12}{Raymarching na Fronteira}{subsection.5.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Detecção de Imersão e Iluminação Invertida}{13}{subsection.5.6}\protected@file@percent }
+\newlabel{subsec:imersao}{{5.6}{13}{Detecção de Imersão e Iluminação Invertida}{subsection.5.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.7}Modelo de Decaimento de Luz}{13}{subsection.5.7}\protected@file@percent }
+\newlabel{subsec:decaimento}{{5.7}{13}{Modelo de Decaimento de Luz}{subsection.5.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.8}Visualização do Modo Adaptativo}{14}{subsection.5.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Física de Partículas e Colisões Implícitas}{14}{section.6}\protected@file@percent }
+\newlabel{sec:particulas}{{6}{14}{Física de Partículas e Colisões Implícitas}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Modelo de Movimento}{14}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Colisão com Formas Implícitas: Reflexão Pelo Gradiente}{14}{subsection.6.2}\protected@file@percent }
+\newlabel{eq:grad_x}{{3}{14}{Colisão com Formas Implícitas: Reflexão Pelo Gradiente}{equation.6.3}{}}
+\newlabel{eq:grad_y}{{4}{14}{Colisão com Formas Implícitas: Reflexão Pelo Gradiente}{equation.6.4}{}}
+\newlabel{eq:reflexao}{{5}{15}{Colisão com Formas Implícitas: Reflexão Pelo Gradiente}{equation.6.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Sombras Dinâmicas por Shadow Ray}{15}{subsection.6.3}\protected@file@percent }
+\newlabel{subsec:shadowray}{{6.3}{15}{Sombras Dinâmicas por Shadow Ray}{subsection.6.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Análise de Complexidade e Performance}{16}{section.7}\protected@file@percent }
+\newlabel{sec:complexidade}{{7}{16}{Análise de Complexidade e Performance}{section.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Custo do Ray Tracing por Frame}{16}{subsection.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Vantagem da Poda}{16}{subsection.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Integração do Sistema: o Loop Principal}{16}{section.8}\protected@file@percent }
+\newlabel{sec:loop}{{8}{16}{Integração do Sistema: o Loop Principal}{section.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Arquitetura de Módulos}{16}{subsection.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}Sequência de Operações por Frame}{16}{subsection.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3}Evento \texttt  {rebuild()}}{17}{subsection.8.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Funções Customizadas: da String ao Código}{17}{section.9}\protected@file@percent }
+\newlabel{sec:custom}{{9}{17}{Funções Customizadas: da String ao Código}{section.9}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {10}Conclusão}{18}{section.10}\protected@file@percent }
+\newlabel{sec:conclusao}{{10}{18}{Conclusão}{section.10}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {A}Pseudocódigo Completo do Loop Principal}{18}{appendix.A}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {4}{\ignorespaces Loop Principal de Renderização}}{18}{algorithm.4}\protected@file@percent }
+\bibcite{chalmers}{1}
+\bibcite{shirley}{2}
+\bibcite{preparata}{3}
+\bibcite{samet}{4}
+\bibcite{pharr}{5}
+\bibcite{visgraf2026}{6}
+\@writefile{toc}{\contentsline {section}{\numberline {B}Tabela de Parâmetros do Sistema}{19}{appendix.B}\protected@file@percent }
+\gdef \@abspage@last{19}

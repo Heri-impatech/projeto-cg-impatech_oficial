@@ -1,77 +1,158 @@
 /* style.css */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Mono:wght@400;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-    --bg-color: #f4f7f6;
-    --panel-bg: #ffffff;
-    --primary-color: #2c3e50;
-    --accent-color: #3498db;
-    --border-color: #dcdde1;
+    --bg:        #0d0f14;
+    --panel:     #13161e;
+    --border:    #1f2430;
+    --accent:    #4a90d9;
+    --accent2:   #f1c40f;
+    --text:      #c8cdd8;
+    --text-dim:  #555d72;
+    --green:     #27ae60;
+    --red:       #c0392b;
+    --yellow:    #e67e22;
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--primary-color);
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    min-height: 100vh;
+    gap: 0;
+}
+
+/* ── PAINEL LATERAL ─────────────────────────────── */
+#controls {
+    width: 280px;
+    min-width: 280px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 20px 16px;
+    height: 100vh;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    margin: 0;
+    gap: 4px;
 }
 
 h2 {
-    margin-top: 0;
-    font-size: 1.2rem;
-    border-bottom: 2px solid var(--accent-color);
-    padding-bottom: 5px;
-}
-
-#controls {
-    background: var(--panel-bg);
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-    width: 512px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 .control-group {
-    margin-bottom: 15px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
 }
 
-canvas {
-    background-color: white;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+.control-group label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+.hint {
+    font-size: 0.65rem;
+    color: var(--accent);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+small {
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── INPUTS ─────────────────────────────────────── */
+input[type="text"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 4px;
+    color: var(--text);
+    padding: 7px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    outline: none;
+    transition: border-color 0.2s;
 }
-
-button {
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.3s;
-    margin-right: 5px;
-}
-
-button:hover {
-    background-color: var(--accent-color);
-}
+input[type="text"]:focus { border-color: var(--accent); }
 
 input[type="range"] {
     width: 100%;
-    margin-top: 10px;
-}
-#btnRayTracer {
-    transition: background-color 0.3s ease;
-    margin-top: 10px;
-    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+    height: 4px;
 }
 
-.ray-active {
-    background-color: orange !important;
-    color: white;
+/* ── BOTÕES ─────────────────────────────────────── */
+button {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    text-align: left;
+}
+button:hover  { opacity: 0.82; }
+button:active { transform: scale(0.97); }
+
+.btn-green  { background: var(--green);  color: #fff; }
+.btn-blue   { background: var(--accent); color: #fff; }
+.btn-yellow { background: var(--yellow); color: #fff; }
+.btn-red    { background: var(--red);    color: #fff; }
+
+/* Botões de modo */
+.btn-mode {
+    background: var(--border);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+}
+.btn-mode.active {
+    background: transparent;
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* ── CANVAS ─────────────────────────────────────── */
+#canvasWrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    height: 100vh;
+}
+
+canvas {
+    display: block;
+    cursor: crosshair;
+    background: #000;
+    box-shadow: 0 0 60px rgba(74,144,217,0.08);
 }
