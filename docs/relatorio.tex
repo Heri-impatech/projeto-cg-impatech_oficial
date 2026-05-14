@@ -1,3 +1,4 @@
+
 \documentclass[11pt,a4paper]{article}
 
 % Pacotes essenciais
@@ -15,11 +16,9 @@
 \usepackage{enumitem}
 \usepackage{caption}
 \usepackage{subcaption}
-\usepackage{hyperref}
 
-
-% Configuração de página para 4 páginas
-\geometry{margin=2cm, top=2cm, bottom=2cm}
+% Configuração de página
+\geometry{margin=2.5cm, top=2.5cm, bottom=2.5cm}
 
 % Ambientes de teoremas
 \theoremstyle{plain}
@@ -41,314 +40,81 @@
     numbers=left,
     numberstyle=\tiny\color{gray},
     breaklines=true,
-    frame=single
+    frame=single,
+    language=JavaScript
 }
 
-\title{\textbf{Modelagem Geométrica: Representações Celulares e Esferas Geodésicas}}
-\author{Relatório de Implementação}
-\date{2 de Fevereiro de 2026}
+\title{\textbf{Modelagem Geométrica: Representações Celulares, Ray Tracing Volumétrico e Dinâmica de Partículas em Tempo Real}}
+\author{Richard Elias Soares Viana \\ \small{IMPA Tech - Graduação em Matemática Aplicada}}
+\date{Maio de 2026}
 
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-Este relatório apresenta a implementação de representações celulares uniformes e adaptativas para formas geométricas bidimensionais (discos e parábolas), bem como a construção de esferas geodésicas por refinamento de sólidos platônicos. Demonstramos formalmente os fundamentos matemáticos de cada técnica e descrevemos os algoritmos utilizados. A implementação pode ser encontrada em \url{https://github.com/rick0110/projects-computer_grafics_summer_2026_IMPA}
+Este artigo detalha a implementação de um sistema robusto de modelagem geométrica bidimensional, integrando representações celulares uniformes e adaptativas (Quadtrees) com motores de renderização e física. O trabalho aborda a transição de visualizações estáticas para um ambiente dinâmico onde funções implícitas arbitrárias definem obstáculos para um sistema de iluminação volumétrica via \textit{Ray Tracing} e partículas físicas. Discutimos como a utilização de estruturas de aceleração espacial permite o processamento em tempo real de fenômenos complexos como sombras, reflexões baseadas em gradientes e decaimento de luz.
 \end{abstract}
 
-\section{Representações Celulares Uniformes}
+\section{Introdução}
+A representação eficiente de formas geométricas é um pilar da computação gráfica. Enquanto modelos paramétricos são intuitivos, as formas implícitas oferecem vantagens únicas em testes de inclusão e operações booleanas. Este projeto explora a discretização dessas formas em grades, utilizando a \textit{Quadtree} não apenas como modelo de visualização, mas como uma estrutura de dados de aceleração para consultas espaciais de alto desempenho.
 
-\subsection{Fundamentação Matemática}
+\section{Representações Celulares e Quadtrees}
 
-\begin{definition}[Partição Uniforme]
-Seja $\Omega = [a,b] \times [c,d] \subset \mathbb{R}^2$ um retângulo. Uma \emph{partição uniforme} de $\Omega$ em $n \times n$ células é a coleção $\mathcal{P} = \{C_{i,j}\}_{i,j=1}^{n}$ onde:
-\[
-C_{i,j} = [x_i, x_{i+1}] \times [y_j, y_{j+1}], \quad x_i = a + i\cdot\Delta x, \quad y_j = c + j\cdot\Delta y
-\]
-com $\Delta x = \frac{b-a}{n}$ e $\Delta y = \frac{d-c}{n}$.
-\end{definition}
-
-\begin{definition}[Classificação de Células para Disco]
-Seja $D = \{(x,y) \in \mathbb{R}^2 : (x-c_x)^2 + (y-c_y)^2 \leq r^2\}$ um disco com centro $(c_x, c_y)$ e raio $r$. Para cada célula $C = [x_{\min}, x_{\max}] \times [y_{\min}, y_{\max}]$, definimos:
-\[
-\sigma(C) = \begin{cases}
-0 & \text{se } C \cap D = \emptyset \quad \text{(exterior)} \\
-1 & \text{se } C \subseteq D \quad \text{(interior)} \\
-2 & \text{se } C \cap \partial D \neq \emptyset \quad \text{(interseção)}
-\end{cases}
-\]
-\end{definition}
-
-\begin{theorem}[Critério de Classificação para Disco]\label{thm:disk}
-Seja $C = [x_{\min}, x_{\max}] \times [y_{\min}, y_{\max}]$ uma célula retangular e $D$ um disco de centro $(c_x, c_y)$ e raio $r$. Então:
-\begin{enumerate}[label=(\roman*)]
-    \item $\sigma(C) = 0$ se e somente se $d_{\min}^2 > r^2$, onde $d_{\min}$ é a distância do centro do disco ao ponto mais próximo de $C$.
-    \item $\sigma(C) = 1$ se e somente se $d_k^2 < r^2$ para todos os vértices $v_k$ de $C$.
-    \item $\sigma(C) = 2$ caso contrário.
-\end{enumerate}
-\end{theorem}
-
-\begin{proof}
-\textbf{(i)} O ponto mais próximo de $C$ ao centro $(c_x, c_y)$ é dado por:
-\[
-p^* = \big(\text{clamp}(c_x, x_{\min}, x_{\max}),\, \text{clamp}(c_y, y_{\min}, y_{\max})\big)
-\]
-onde $\text{clamp}(z, a, b) = \max(a, \min(z, b))$. Se $\|p^* - (c_x, c_y)\|^2 > r^2$, então todo ponto de $C$ está a distância maior que $r$ do centro, logo $C \cap D = \emptyset$.
-
-\textbf{(ii)} Se todos os vértices $v_k \in \{(x_{\min}, y_{\min}), (x_{\max}, y_{\min}), (x_{\max}, y_{\max}), (x_{\min}, y_{\max})\}$ satisfazem $\|v_k - (c_x, c_y)\|^2 < r^2$, então pela convexidade de $D$ e $C$, temos $C \subset D$.
-
-\textbf{(iii)} Segue por exclusão dos casos anteriores. \qed
-\end{proof}
-
-\begin{definition}[Classificação para Região Parabólica]
-Seja $R = \{(x,y) \in \mathbb{R}^2 : y \geq ax^2 + bx + c\}$. Para uma célula $C$:
-\[
-\sigma(C) = \begin{cases}
-0 & \text{se } C \cap R = \emptyset \\
-1 & \text{se } C \subseteq R \\
-2 & \text{se } C \cap \partial R \neq \emptyset
-\end{cases}
-\]
-\end{definition}
-
-\begin{theorem}[Critério de Interseção Parábola-Retângulo]
-A célula $C$ intersecta a fronteira $\partial R: y = ax^2 + bx + c$ se e somente se pelo menos uma das seguintes condições é satisfeita:
-\begin{enumerate}[label=(\roman*)]
-    \item A parábola cruza uma aresta vertical: $y_{\min} \leq ax_{\min}^2 + bx_{\min} + c \leq y_{\max}$ ou análogo para $x_{\max}$.
-    \item A parábola cruza uma aresta horizontal: existem soluções $x \in [x_{\min}, x_{\max}]$ de $ax^2 + bx + (c - y_k) = 0$ para $y_k \in \{y_{\min}, y_{\max}\}$.
-\end{enumerate}
-\end{theorem}
-
-\subsection{Implementação}
-
-A classificação de uma célula $C$ pode ser determinada da seguinte forma:
-
+\subsection{Grades Uniformes e Classificação}
+Dada uma região $\Omega$ e uma função implícita $f(x,y)$, a discretização uniforme divide o domínio em células de tamanho fixo. O status de cada célula é determinado pela avaliação de $f$:
 \begin{itemize}
-    \item $\sigma(C) = 0$ se todos os vértices de $C$ estiverem abaixo da parábola, pois a região acima da parábola é convexa se $a > 0$.
-    \item $\sigma(C) = 2$ se houver interseção das arestas da célula com a parábola, conforme as condições acima.
-    \item $\sigma(C) = 1$ se as condições anteriores não forem satisfeitas.
+    \item \textbf{Status 0 (Fora):} $f(x,y) > 0$ em toda a célula.
+    \item \textbf{Status 1 (Dentro):} $f(x,y) \leq 0$ em toda a célula.
+    \item \textbf{Status 2 (Interseção):} A fronteira $f(x,y) = 0$ atravessa a célula.
 \end{itemize}
 
-A implementação utiliza \textbf{PyTorch} com \texttt{vmap} para vetorização massiva das operações. As células são processadas em paralelo, explorando aceleração GPU quando disponível:
+\subsection{Quadtree Adaptativa e Poda (Pruning)}
+A Quadtree otimiza o espaço subdividindo apenas células de interseção (Status 2). 
+\textbf{Implementação Técnica:} A estrutura foi implementada em \texttt{js/adaptive.js} utilizando recursão para construção e um método de pós-processamento de poda. O algoritmo de poda verifica recursivamente: se um nó pai possui quatro filhos com o mesmo status (ex: todos Status 0), os filhos são descartados e o pai assume aquele status. Isso é vital para que o \textit{Ray Tracer} não perca tempo processando subdivisões desnecessárias no vazio.
 
-\begin{equation}
-\text{Grid}: \mathbb{R}^{n \times n \times 4 \times 2} \xrightarrow{\text{vmap}} \mathbb{Z}_3^{n \times n}
-\end{equation}
+\section{Ray Tracing e Iluminação Volumétrica}
 
-\section{Representações Celulares Adaptativas (Quadtree)}
+O motor de renderização foi projetado para simular uma lanterna omnidirecional.
 
-\subsection{Fundamentação Matemática}
-
-\begin{definition}[Quadtree]
-Uma \emph{quadtree} $T$ sobre $\Omega \subset \mathbb{R}^2$ é uma árvore quaternária onde cada nó $v$ representa uma célula retangular $C_v$, e seus quatro filhos (se existirem) representam a subdivisão de $C_v$ em quatro sub-células de igual tamanho.
-\end{definition}
-
-\begin{theorem}[Complexidade Espacial Adaptativa]
-Seja $\partial S$ a fronteira de uma forma $S$ com comprimento de arco $L$. Para uma quadtree de profundidade máxima $d$ sobre $\Omega = [0,1]^2$, o número de células na fronteira é $O(L \cdot 2^d)$, enquanto células internas/externas requerem $O(1)$ nós (não são subdivididas).
-\end{theorem}
-
-\begin{proof}
-Cada célula de fronteira no nível $d$ tem lado $\ell = 2^{-d}$. A fronteira $\partial S$ atravessa no máximo $O(L/\ell) = O(L \cdot 2^d)$ células. Células completamente internas ou externas não são subdivididas pelo critério adaptativo. \qed
-\end{proof}
-
-\textbf{Algoritmo de Construção Adaptativa:}
-
-\begin{enumerate}
-    \item \textsc{Build}($\Omega$, forma $S$, profundidade máxima $d$):
-    \begin{itemize}
-        \item $\sigma \gets$ \textsc{Classify}($\Omega$, $S$)
-        \item raiz $\gets$ \textsc{Node}($\Omega$, $\sigma$)
-        \item Se $\sigma = 2$ e profundidade $< d$: \textsc{Subdivide}(raiz, $S$, $d$)
-    \end{itemize}
-    \item \textsc{Subdivide}(nó $v$, forma $S$, $d$):
-    \begin{itemize}
-        \item Para cada quadrante $Q$ de $C_v$:
-        \item $\sigma_Q \gets$ \textsc{Classify}($Q$, $S$)
-        \item filho $\gets$ \textsc{Node}($Q$, $\sigma_Q$)
-        \item Se $\sigma_Q = 2$ e profundidade(filho) $< d$: \textsc{Subdivide}(filho, $S$, $d$)
-    \end{itemize}
-\end{enumerate}
-
-\subsection{Poda da Árvore}
-
-\begin{proposition}[Critério de Poda]
-Se todos os filhos de um nó $v$ possuem status idêntico $\sigma \in \{0, 1\}$, então os filhos podem ser removidos e $v$ recebe status $\sigma$.
-\end{proposition}
-
-\section{Esfera Geodésica por Refinamento}
-
-\subsection{Fundamentação Matemática}
-
-\begin{definition}[Projeção Radial na Esfera]
-Seja $\mathbb{S}^2 = \{x \in \mathbb{R}^3 : \|x\| = 1\}$ a esfera unitária. A \emph{projeção radial} $\pi: \mathbb{R}^3 \setminus \{0\} \to \mathbb{S}^2$ é definida por:
+\subsection{Aceleração por AABB (Slab Method)}
+Para cada raio $\mathbf{r}(t) = \mathbf{o} + t\mathbf{d}$, a travessia na Quadtree utiliza o teste de interseção com caixas delimitadoras alinhadas aos eixos (AABB).
+Para um nó com limites $[x_{\min}, x_{\max}]$ e $[y_{\min}, y_{\max}]$, calculamos:
 \[
-\pi(x) = \frac{x}{\|x\|}
+t_{x1} = \frac{x_{\min} - o_x}{d_x}, \quad t_{x2} = \frac{x_{\max} - o_x}{d_x}
 \]
-\end{definition}
+O raio intercepta o nó se o intervalo $[t_{\min}, t_{\max}]$ resultante da interseção de todos os eixos for válido e positivo. Esta técnica permite que o sistema ignore instantaneamente milhares de pixels que não estão na trajetória da luz.
 
-\begin{theorem}[Preservação de Estrutura Triangular]
-Seja $T = \{v_1, v_2, v_3\}$ um triângulo com vértices em $\mathbb{S}^2$. O refinamento por subdivisão mediana seguido de projeção radial produz quatro triângulos geodésicos bem-definidos.
-\end{theorem}
+\subsection{Iluminação de Dentro para Fora}
+Um desafio implementado foi a detecção de imersão. Ao iniciar o \textit{Ray Tracing}, o sistema avalia $f(\mathbf{o})$. Se $f(\mathbf{o}) \leq 0$, a luz nasce "dentro" do objeto. O algoritmo de colisão é invertido: o raio viaja pelo interior (azul) e só colide quando tenta "sair" da forma ($f > 0$). Isso cria um efeito visual onde apenas o interior do objeto é iluminado por uma luz azulada, enquanto o exterior permanece em trevas.
 
-\begin{proof}
-Dado um triângulo esférico $T$ com vértices $v_1, v_2, v_3 \in \mathbb{S}^2$:
-
-\textbf{Passo 1:} Calculamos os pontos médios das arestas:
+\subsection{Decaimento de Luz (Falloff)}
+A intensidade da luz não é linear. Implementamos uma curva de decaimento quadrática para suavidade visual:
 \[
-m_{12} = \frac{v_1 + v_2}{2}, \quad m_{23} = \frac{v_2 + v_3}{2}, \quad m_{31} = \frac{v_3 + v_1}{2}
+I(t) = I_0 \cdot \left( 1 - \frac{t}{R} \right)^{2.5}
 \]
+Onde $R$ é o \texttt{lightRange} ajustável pelo usuário. O resultado é um núcleo brilhante que se dissipa suavemente, simulando dispersão volumétrica.
 
-\textbf{Passo 2:} Projetamos na esfera:
+\section{Física de Partículas e Colisões}
+
+\subsection{Cálculo de Gradientes para Reflexão}
+As partículas dinâmicas em \texttt{js/main.js} colidem com as formas implícitas. Para calcular a direção do "quique", aproximamos a normal $\mathbf{n}$ da superfície usando o gradiente da função implícita via diferenças finitas:
 \[
-m'_{ij} = \pi(m_{ij}) = \frac{m_{ij}}{\|m_{ij}\|}
+\nabla f \approx \left[ \frac{f(x+\epsilon, y) - f(x-\epsilon, y)}{2\epsilon}, \frac{f(x, y+\epsilon) - f(x, y-\epsilon)}{2\epsilon} \right]
 \]
+A velocidade é então refletida: $\mathbf{v}_{ref} = \mathbf{v} - 2(\mathbf{v} \cdot \mathbf{n})\mathbf{n}$.
 
-\textbf{Passo 3:} Os quatro novos triângulos são:
-\[
-T_1 = (v_1, m'_{12}, m'_{31}), \quad T_2 = (v_2, m'_{23}, m'_{12}), \quad T_3 = (v_3, m'_{31}, m'_{23}), \quad T_4 = (m'_{12}, m'_{23}, m'_{31})
-\]
+\subsection{Sombras Dinâmicas (Line-of-Sight)}
+Cada partícula verifica se está sendo atingida pela luz antes de ser desenhada. Ela lança um \textit{shadow ray} de volta para a lanterna. Se a Quadtree detectar qualquer nó de interseção ou preenchido entre a partícula e a luz, a partícula entra em "sombra" e sua renderização é omitida.
 
-Cada triângulo tem vértices em $\mathbb{S}^2$ por construção. \qed
-\end{proof}
+\section{Rasterização de Funções Customizadas}
+O sistema permite a entrada de \textit{strings} como \texttt{"x*x + y*y - 0.5"}. 
+\textbf{Implementação:} Utilizamos o construtor \texttt{new Function('x', 'y', ...)} para transformar a entrada do usuário em código executável de alta performance. As coordenadas do Canvas são mapeadas para um domínio canônico $[-2, 2]$ para que funções matemáticas clássicas funcionem sem ajustes de escala manuais.
 
-\begin{proposition}[Dinâmica de Crescimento da Malha]
-Seja $\mathcal{M}_0$ uma malha triangular fechada (homeomorfa a $\mathbb{S}^2$) com $F_0$ faces, $A_0$ arestas e $V_0$ vértices. Após $k$ iterações do algoritmo de refinamento por subdivisão mediana, as quantidades de elementos são:
-\[
-F_k = 4^k F_0, \qquad A_k = 4^k A_0, \qquad V_k = 2 + 4^k(V_0 - 2)
-\]
-\end{proposition}
+\section{Esferas Geodésicas}
+Embora o foco tenha se deslocado para o motor 2D, a seção de esferas em \texttt{js/sphere.js} mantém o rigor do refinamento do icosaedro. A cada nível de refinamento, novas faces são geradas pela conexão dos pontos médios projetados na superfície esférica ($\|v\|=1$), resultando em uma malha de triângulos quase equiláteros que minimiza distorções de mapeamento.
 
-\begin{proof}
-\textbf{(i) Faces ($F_k$):} O algoritmo subdivide cada face triangular $T$ em quatro novas faces conectando os pontos médios das arestas. Logo, o número de faces quadruplica a cada iteração:
-\[
-F_k = 4 \cdot F_{k-1} \implies F_k = 4^k F_0
-\]
-
-\textbf{(ii) Arestas ($A_k$):} Demonstramos a recorrência $A_k = 4A_{k-1}$ pela construção geométrica. Cada aresta antiga é dividida em duas (gerando $2A_{k-1}$ arestas), e em cada uma das $F_{k-1}$ faces inserimos 3 novas arestas internas:
-\[
-A_k = 2A_{k-1} + 3F_{k-1}
-\]
-Como a malha é triangular, vale $3F_{k-1} = 2A_{k-1}$. Substituindo:
-\[
-A_k = 2A_{k-1} + 3 \cdot \frac{2A_{k-1}}{3} = 4A_{k-1} \implies A_k = 4^k A_0
-\]
-
-\textbf{(iii) Vértices ($V_k$):} Utilizamos a Característica de Euler para superfícies fechadas orientáveis de gênero 0:
-\[
-V_k - A_k + F_k = \chi(\mathbb{S}^2) = 2
-\]
-Isolando $V_k$ e substituindo os resultados de (i) e (ii):
-\[
-V_k = 2 + A_k - F_k = 2 + 4^k A_0 - 4^k F_0 = 2 + 4^k(A_0 - F_0)
-\]
-Da Característica de Euler na malha inicial, $V_0 - A_0 + F_0 = 2$, temos $A_0 - F_0 = V_0 - 2$. Portanto:
-\[
-V_k = 2 + 4^k(V_0 - 2) \qed
-\]
-\end{proof}
-
-\begin{corollary}
-Para o icosaedro ($V_0 = 12$, $A_0 = 30$, $F_0 = 20$), com $k=8$ refinamentos:
-\[
-F_8 = 4^8 \cdot 20 = 1.310.720 \text{ faces}, \quad V_8 = 2 + 4^8 \cdot 10 = 655.362 \text{ vértices}
-\]
-\end{corollary}
-
-\subsection{Formato OBJ}
-
-A malha resultante é exportada no formato Wavefront OBJ:
-\begin{itemize}
-    \item \texttt{v x y z}: vértice com coordenadas normalizadas ($\|v\| = 1$)
-    \item \texttt{f i j k}: face triangular com índices de vértices (1-indexado)
-\end{itemize}
-
-\section{Resultados e Dificuldades}
-
-\subsection{Resultados}
-\begin{itemize}
-    \item \textbf{Uniformes}: Grades processadas em paralelo com suporte para GPU.
-    \item \textbf{Adaptativas}: Quadtrees construidas recursivamente analisando apenas células de fronteira, sendo mais eficiente em CPU. Além disso, pode-se ver a construção recursiva por meio de animação.
-    \item \textbf{Esfera}: Refinamento do icosaedro e geração de arquivo obj. Resultados de vizualização foram aceitaveis.
-\end{itemize}
-
-\subsection{Dificuldades Encontradas}
-\begin{enumerate}
-    \item \textbf{Divisão adaptativa e uniforme}: Adaptar algoritmos para \texttt{vmap} do PyTorch exigiu evitar alguns tipos de operacões e mudar mudar a estrutura de fluxo do algoritmo para que houvesse apenas operacões vetoriais e que permitisse um fluxo idêntico para que se pudesse dar uma única instrução para várias threads. Além disso, como o método de classificação de células em parábloas nao estava nos slides, tive que pensar um pouco antes de implementar (tive problemas para debugar o código, pois a minha primeira intuição de classificaçao -- sem pensar na lógica matemática -- estava errada).
-    \item \textbf{Unificação de Vértices}: O refinamento ingênuo cria vértices duplicados; uma estrutura de hash -- sugerida no material -- foi necessária para malhas maiores (porém tive que pensar um pouco sobre como implementar).
-\end{enumerate}
-
-\section{Figuras}
-
-\begin{figure}[H]
-\centering
-\begin{subfigure}[b]{0.32\textwidth}
-    \includegraphics[width=\textwidth]{../img/uniform_circle_0_grid_16.png}
-    \caption{Grade $16 \times 16$}
-\end{subfigure}
-\begin{subfigure}[b]{0.32\textwidth}
-    \includegraphics[width=\textwidth]{../img/uniform_circle_0_grid_32.png}
-    \caption{Grade $32 \times 32$}
-\end{subfigure}
-\begin{subfigure}[b]{0.32\textwidth}
-    \includegraphics[width=\textwidth]{../img/uniform_circle_0_grid_64.png}
-    \caption{Grade $64 \times 64$}
-\end{subfigure}
-\caption{Representação Uniforme do Disco (centro $(0.3, 0.4)$, raio $0.21$).}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\begin{subfigure}[b]{0.32\textwidth}
-    \includegraphics[width=\textwidth]{../img/quadtree_circle_0_depth_4.png}
-    \caption{Profundidade 4}
-\end{subfigure}
-\begin{subfigure}[b]{0.32\textwidth}
-    \includegraphics[width=\textwidth]{../img/quadtree_circle_0_depth_5.png}
-    \caption{Profundidade 5}
-\end{subfigure}
-\begin{subfigure}[b]{0.32\textwidth}
-    \includegraphics[width=\textwidth]{../img/quadtree_circle_0_depth_6.png}
-    \caption{Profundidade 6}
-\end{subfigure}
-\caption{Representação Adaptativa (Quadtree) do Disco.}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\begin{subfigure}[b]{0.32\textwidth}
-    \includegraphics[width=\textwidth]{../img/uniform_parabola_0_grid_32.png}
-    \caption{Uniforme $32 \times 32$}
-\end{subfigure}
-\begin{subfigure}[b]{0.32\textwidth}
-    \includegraphics[width=\textwidth]{../img/quadtree_parabola_0_depth_5.png}
-    \caption{Quadtree profundidade 5}
-\end{subfigure}
-\begin{subfigure}[b]{0.32\textwidth}
-    \includegraphics[width=\textwidth]{../img/quadtree_parabola_0_depth_6.png}
-    \caption{Quadtree profundidade 6}
-\end{subfigure}
-\caption{Parábola $y \geq x^2$: representações uniforme e adaptativa.}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\begin{subfigure}[b]{0.24\textwidth}
-    \includegraphics[width=\textwidth]{../img/sphere_refine_0.png}
-    \caption{Nível 0 (20 faces)}
-\end{subfigure}
-\begin{subfigure}[b]{0.24\textwidth}
-    \includegraphics[width=\textwidth]{../img/sphere_refine_1.png}
-    \caption{Nível 1 (80 faces)}
-\end{subfigure}
-\begin{subfigure}[b]{0.24\textwidth}
-    \includegraphics[width=\textwidth]{../img/sphere_refine_2.png}
-    \caption{Nível 2 (320 faces)}
-\end{subfigure}
-\begin{subfigure}[b]{0.24\textwidth}
-    \includegraphics[width=\textwidth]{../img/sphere_refine_3.png}
-    \caption{Nível 3 (1280 faces)}
-\end{subfigure}
-\caption{Refinamento da Esfera Geodésica: do icosaedro (nível 0) até nível 3. Cada nível quadruplica o número de faces.}
-\end{figure}
+\section{Conclusão}
+A integração da Quadtree com o Ray Tracing e a física implícita demonstra o poder das estruturas de subdivisão espacial. O que começou como uma simples grade estática evoluiu para um sistema capaz de processar centenas de partículas e milhares de raios de luz em tempo real, provando que a modelagem geométrica matemática é a base para simulações visuais complexas e eficientes.
 
 \end{document}
