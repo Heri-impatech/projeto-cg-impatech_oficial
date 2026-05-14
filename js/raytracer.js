@@ -1,43 +1,41 @@
 class RayTracer {
     constructor() {
         this.origin = { x: 50, y: 50 };
-        this.numRays = 180; 
+        this.numRays = 180;
     }
-    castRays(ctx, shape) {
+    castRays(ctx, shape, width = 512, height = 512) {
+        // Restrição de paleta: apenas vermelho (interseção).
+        const rayColor = "#E74C3C";
+        const stepAngle = (Math.PI * 2) / this.numRays;
+        const maxDist = Math.max(width, height) * 2;
+
         ctx.save();
-        ctx.globalCompositeOperation = "lighter"; // Brilho aditivo
-        const step = (Math.PI * 2) / this.numRays;
+        ctx.fillStyle = rayColor;
 
         for (let i = 0; i < this.numRays; i++) {
-            const angle = i * step;
+            const angle = i * stepAngle;
             const dx = Math.cos(angle);
             const dy = Math.sin(angle);
 
-            ctx.beginPath();
-            ctx.lineWidth = 1.5;
-            // Cor neon dinâmica baseada no ângulo
-            ctx.strokeStyle = `hsla(${i * (360/this.numRays)}, 100%, 60%, 0.15)`;
-            ctx.moveTo(this.origin.x, this.origin.y);
-
-            for (let d = 0; d < 800; d += 3) {
+            for (let d = 0; d < maxDist; d += 2) {
                 const px = this.origin.x + dx * d;
                 const py = this.origin.y + dy * d;
+                const ix = px | 0;
+                const iy = py | 0;
 
+                if (ix < 0 || ix >= width || iy < 0 || iy >= height) break;
+
+                // Desenha um pixel do raio
+                ctx.fillRect(ix, iy, 1, 1);
+
+                // Para no primeiro impacto com a forma
                 if (shape.evaluate(px, py) <= 0) {
-                    ctx.lineTo(px, py);
-                    // Ponto de impacto brilhante
-                    ctx.stroke();
-                    ctx.fillStyle = "#fff";
-                    ctx.fillRect(px-1, py-1, 2, 2);
-                    break;
-                }
-                if (px < 0 || px > 500 || py < 0 || py > 500) {
-                    ctx.lineTo(px, py);
-                    ctx.stroke();
+                    ctx.fillRect(ix - 1, iy - 1, 3, 3);
                     break;
                 }
             }
         }
+
         ctx.restore();
     }
 }

@@ -3,40 +3,78 @@
  * Implementa a representação por grade uniforme (Uniform Grid).
  */
 
-function drawUniformGrid(ctx, shape, resolution, width, height) {
+const UNIFORM_COLORS = {
+    0: [255, 255, 255, 255], // FORA: Branco
+    1: [74, 144, 217, 255],  // DENTRO: Azul (mesma paleta do repo de referência)
+    2: [231, 76, 60, 255],   // INTERSEÇÃO / NÃO CLASSIFICADO: Vermelho
+};
+
+function uniformFillImageData(imageData, rgba) {
+    const d = imageData.data;
+    for (let i = 0; i < d.length; i += 4) {
+        d[i] = rgba[0];
+        d[i + 1] = rgba[1];
+        d[i + 2] = rgba[2];
+        d[i + 3] = rgba[3];
+    }
+}
+
+function uniformPaintRect(imageData, x, y, w, h, rgba) {
+    const width = imageData.width;
+    const data = imageData.data;
+
+    const x0 = Math.max(0, Math.floor(x));
+    const y0 = Math.max(0, Math.floor(y));
+    const x1 = Math.min(width, Math.ceil(x + w));
+    const y1 = Math.min(imageData.height, Math.ceil(y + h));
+
+    for (let py = y0; py < y1; py++) {
+        let idx = (py * width + x0) * 4;
+        for (let px = x0; px < x1; px++) {
+            data[idx] = rgba[0];
+            data[idx + 1] = rgba[1];
+            data[idx + 2] = rgba[2];
+            data[idx + 3] = rgba[3];
+            idx += 4;
+        }
+    }
+}
+
+function buildUniformImageData(shape, resolution, width, height) {
+    const data = new Uint8ClampedArray(width * height * 4);
+    const imageData = new ImageData(data, width, height);
+
+    // Fundo branco (FORA)
+    uniformFillImageData(imageData, UNIFORM_COLORS[0]);
+
     const cellWidth = width / resolution;
     const cellHeight = height / resolution;
 
-    // Limpa o canvas antes de desenhar
-    ctx.clearRect(0, 0, width, height);
-
     for (let i = 0; i < resolution; i++) {
         for (let j = 0; j < resolution; j++) {
-            // Define as coordenadas da célula no sistema do Canvas
             const xMin = i * cellWidth;
             const xMax = (i + 1) * cellWidth;
             const yMin = j * cellHeight;
             const yMax = (j + 1) * cellHeight;
 
-            // Classifica a célula usando a lógica matemática rigorosa
             const status = shape.classifyCell(xMin, xMax, yMin, yMax);
+            if (status === 0) continue;
 
-            // Define a cor baseada no status (conforme o relatório original)
-            if (status === 1) {
-                ctx.fillStyle = "rgba(0, 0, 255, 0.6)"; // DENTRO: Azul 
-            } else if (status === 2) {
-                ctx.fillStyle = "rgba(255, 0, 0, 0.8)"; // INTERSEÇÃO: Vermelho 
-            } else {
-                continue; // FORA: Branco/Transparente 
-            }
-
-            // Desenha a célula
-            ctx.fillRect(xMin, yMin, cellWidth, cellHeight);
-            
-            // Desenha a borda da célula para visualização da grade
-            ctx.strokeStyle = "#ddd";
-            ctx.lineWidth = 0.5;
-            ctx.strokeRect(xMin, yMin, cellWidth, cellHeight);
+            uniformPaintRect(
+                imageData,
+                xMin,
+                yMin,
+                xMax - xMin,
+                yMax - yMin,
+                UNIFORM_COLORS[status]
+            );
         }
     }
+
+    return imageData;
+}
+
+function drawUniformGrid(ctx, shape, resolution, width, height) {
+    const imageData = buildUniformImageData(shape, resolution, width, height);
+    ctx.putImageData(imageData, 0, 0);
 }

@@ -9,9 +9,79 @@ const vec3 = window.vec3 || (window.glMatrix ? window.glMatrix.vec3 : null);
 if (!mat4 || !vec3) {
     console.error("Erro Crítico: gl-matrix não encontrada! Verifique se lib/gl-matrix.js está carregada no index.html.");
 }
+
+const SPHERE_WHITE = [255, 255, 255, 255];
+const SPHERE_BLUE = [74, 144, 217, 255];
+
+function sphereFillImageData(imageData, rgba) {
+    const d = imageData.data;
+    for (let i = 0; i < d.length; i += 4) {
+        d[i] = rgba[0];
+        d[i + 1] = rgba[1];
+        d[i + 2] = rgba[2];
+        d[i + 3] = rgba[3];
+    }
+}
+
+function spherePaintPixel(imageData, x, y, rgba) {
+    const w = imageData.width;
+    const h = imageData.height;
+    if (x < 0 || x >= w || y < 0 || y >= h) return;
+
+    const d = imageData.data;
+    const idx = (y * w + x) * 4;
+    d[idx] = rgba[0];
+    d[idx + 1] = rgba[1];
+    d[idx + 2] = rgba[2];
+    d[idx + 3] = rgba[3];
+}
+
+function sphereDrawLine(imageData, x0, y0, x1, y1, rgba) {
+    // Bresenham (inteiro) para evitar anti-aliasing e manter paleta exata.
+    let x = x0 | 0;
+    let y = y0 | 0;
+    const xEnd = x1 | 0;
+    const yEnd = y1 | 0;
+
+    let dx = xEnd - x;
+    let sx = 1;
+    if (dx < 0) {
+        dx = -dx;
+        sx = -1;
+    }
+
+    let dy = yEnd - y;
+    let sy = 1;
+    if (dy < 0) {
+        dy = -dy;
+        sy = -1;
+    }
+
+    let err = dx - dy;
+
+    while (true) {
+        spherePaintPixel(imageData, x, y, rgba);
+        if (x === xEnd && y === yEnd) break;
+
+        const e2 = err * 2;
+        if (e2 > -dy) {
+            err -= dy;
+            x += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            y += sy;
+        }
+    }
+}
+
 class SphereRefiner {
     constructor() {
         this.rotationAngle = 0; // Atributo da classe para manter o estado do ângulo
+
+        this.imageData = null;
+        this.projX = [];
+        this.projY = [];
 
         // Vértices do Icosaedro Base (Normalizados para raio 1)
         const phi = (1 + Math.sqrt(5)) / 2;
@@ -19,7 +89,12 @@ class SphereRefiner {
             [-1,  phi, 0], [ 1,  phi, 0], [-1, -phi, 0], [ 1, -phi, 0],
             [ 0, -1,  phi], [ 0,  1,  phi], [ 0, -1, -phi], [ 0,  1, -phi],
             [ phi, 0, -1], [ phi, 0,  1], [-phi, 0, -1], [-phi, 0,  1]
-        ].map(v => this.normalize(v));
+        ];
+
+        // Normaliza todos os vértices (sem map de array)
+        for (let i = 0; i < this.vertices.length; i++) {
+            this.vertices[i] = this.normalize(this.vertices[i]);
+        }
 
         this.faces = [
             [0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11],
@@ -30,8 +105,11 @@ class SphereRefiner {
     }
 
     normalize(v) {
-        const d = Math.sqrt(v[0]**2 + v[1]**2 + v[2]**2);
-        return [v[0]/d, v[1]/d, v[2]/d];
+        const x = v[0];
+        const y = v[1];
+        const z = v[2];
+        const d = Math.sqrt(x * x + y * y + z * z);
+        return [x / d, y / d, z / d];
     }
 
     getMidpoint(v1Idx, v2Idx, cache) {
@@ -55,7 +133,8 @@ class SphereRefiner {
         const newFaces = [];
         const cache = {};
 
-        for (const face of this.faces) {
+        for (let fi = 0; fi < this.faces.length; fi++) {
+            const face = this.faces[fi];
             const a = this.getMidpoint(face[0], face[1], cache);
             const b = this.getMidpoint(face[1], face[2], cache);
             const c = this.getMidpoint(face[2], face[0], cache);
@@ -76,33 +155,42 @@ class SphereRefiner {
         mat4.rotate(modelViewMatrix, modelViewMatrix, this.rotationAngle, [0, 1, 0]); // Gira no eixo Y
         mat4.rotate(modelViewMatrix, modelViewMatrix, this.rotationAngle * 0.5, [1, 0, 0]); // Gira um pouco no X
 
-        ctx.clearRect(0, 0, width, height);
-        ctx.strokeStyle = "rgba(44, 62, 80, 0.6)";
-        ctx.lineWidth = 1;
+        // Render em ImageData para manter paleta exata (sem anti-aliasing).
+        if (!this.imageData || this.imageData.width !== width || this.imageData.height !== height) {
+            const data = new Uint8ClampedArray(width * height * 4);
+            this.imageData = new ImageData(data, width, height);
+        }
+        sphereFillImageData(this.imageData, SPHERE_WHITE);
 
-        for (const face of this.faces) {
-            ctx.beginPath();
-            for (let i = 0; i < 3; i++) {
-                const v = this.vertices[face[i]];
-                
-                // Aplicamos a rotação matemática ao vértice 3D
-                const rotatedV = vec3.create();
-                vec3.transformMat4(rotatedV, v, modelViewMatrix);
-
-                // Projeção simples para a tela 2D
-                const x = rotatedV[0] * scale + width / 2;
-                const y = rotatedV[1] * scale + height / 2;
-
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.closePath();
-            ctx.stroke();
+        // Projeta todos os vértices uma única vez.
+        if (this.projX.length !== this.vertices.length) {
+            this.projX = new Array(this.vertices.length);
+            this.projY = new Array(this.vertices.length);
         }
 
-        // Trick acadêmico: chama o próximo frame para animação fluida
-        if (viewMode === 'sphere') {
-            requestAnimationFrame(() => this.draw(ctx, width, height, scale));
+        const rotatedV = vec3.create();
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            vec3.transformMat4(rotatedV, this.vertices[vi], modelViewMatrix);
+            const x = rotatedV[0] * scale + width / 2;
+            const y = rotatedV[1] * scale + height / 2;
+            this.projX[vi] = Math.round(x);
+            this.projY[vi] = Math.round(y);
         }
+
+        // Desenha arestas das faces como linhas por pixel.
+        for (let fi = 0; fi < this.faces.length; fi++) {
+            const face = this.faces[fi];
+            const i0 = face[0];
+            const i1 = face[1];
+            const i2 = face[2];
+
+            sphereDrawLine(this.imageData, this.projX[i0], this.projY[i0], this.projX[i1], this.projY[i1], SPHERE_BLUE);
+            sphereDrawLine(this.imageData, this.projX[i1], this.projY[i1], this.projX[i2], this.projY[i2], SPHERE_BLUE);
+            sphereDrawLine(this.imageData, this.projX[i2], this.projY[i2], this.projX[i0], this.projY[i0], SPHERE_BLUE);
+        }
+
+        ctx.putImageData(this.imageData, 0, 0);
+
+        // A animação (requestAnimationFrame) é controlada pelo loop principal em js/main.js.
     }
 }
